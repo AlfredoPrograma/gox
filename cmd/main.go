@@ -1,8 +1,12 @@
 package main
 
-import "github.com/alfredoprograma/gox"
+import (
+	"os"
+
+	"github.com/alfredoprograma/gox"
+)
 
 func main() {
-	runtime := gox.New()
+	runtime := gox.New(os.Args)
 	runtime.Run()
 }
