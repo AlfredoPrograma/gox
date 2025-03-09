@@ -61,6 +61,30 @@ func (l *Lexer) scan() error {
 		l.addToken(MustCreateTokenFromKind(Slash, l.line))
 	case '*':
 		l.addToken(MustCreateTokenFromKind(Star, l.line))
+	case '!':
+		if l.match('=') {
+			l.addToken(MustCreateTokenFromKind(BangEqual, l.line))
+		} else {
+			l.addToken(MustCreateTokenFromKind(Bang, l.line))
+		}
+	case '=':
+		if l.match('=') {
+			l.addToken(MustCreateTokenFromKind(DoubleEqual, l.line))
+		} else {
+			l.addToken(MustCreateTokenFromKind(Equal, l.line))
+		}
+	case '>':
+		if l.match('=') {
+			l.addToken(MustCreateTokenFromKind(GreaterEqual, l.line))
+		} else {
+			l.addToken(MustCreateTokenFromKind(Greater, l.line))
+		}
+	case '<':
+		if l.match('=') {
+			l.addToken(MustCreateTokenFromKind(LessEqual, l.line))
+		} else {
+			l.addToken(MustCreateTokenFromKind(Less, l.line))
+		}
 	default:
 		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
@@ -82,6 +106,24 @@ func (l *Lexer) advance() rune {
 	ch := l.source[l.current]
 	l.current++
 	return rune(ch)
+}
+
+// Tries to match the current source cursor character with an arbitrary character.
+//
+// If matches, advance it and return true; otherwise just return false.
+func (l *Lexer) match(target rune) bool {
+	if l.isEnd() {
+		return false
+	}
+
+	next := rune(l.source[l.current])
+
+	if next != target {
+		return false
+	}
+
+	l.current++
+	return true
 }
 
 // Checks if current source cursor has reached end.

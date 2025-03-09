@@ -29,6 +29,25 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("should tokenize pairable char lexemes", func(t *testing.T) {
+		source := "!!====>>=<<="
+		lexer := New(source)
+		expected := []Token{
+			MustCreateTokenFromKind(Bang, 1),
+			MustCreateTokenFromKind(BangEqual, 1),
+			MustCreateTokenFromKind(DoubleEqual, 1),
+			MustCreateTokenFromKind(Equal, 1),
+			MustCreateTokenFromKind(Greater, 1),
+			MustCreateTokenFromKind(GreaterEqual, 1),
+			MustCreateTokenFromKind(Less, 1),
+			MustCreateTokenFromKind(LessEqual, 1),
+			MustCreateTokenFromKind(Eof, 1),
+		}
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
 	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
 		source := "()$.#," // "$" is an invalid character
 		lexer := New(source)
