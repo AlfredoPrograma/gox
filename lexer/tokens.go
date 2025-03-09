@@ -66,6 +66,7 @@ var TokenKindToLexemeMap = map[TokenKind]string{
 	Semicolon:  ";",
 	Slash:      "/",
 	Star:       "*",
+	Eof:        "",
 }
 
 type Token struct {

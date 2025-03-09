@@ -17,7 +17,7 @@ func TestTokens(t *testing.T) {
 	})
 
 	t.Run("should panic on non matching lexeme for provided token kind", func(t *testing.T) {
-		nonLexemeKinds := []TokenKind{String, Number, Identifier, Eof}
+		nonLexemeKinds := []TokenKind{String, Number, Identifier}
 
 		for _, kind := range nonLexemeKinds {
 			assert.Panics(t, func() { MustCreateTokenFromKind(kind, 1) })
