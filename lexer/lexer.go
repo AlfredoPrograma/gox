@@ -5,6 +5,7 @@ package lexer
 type Lexer struct {
 	source  string  // plain string source code
 	tokens  []Token // generated tokens
+	errors  []error // errors raised during tokenization
 	current uint    // current cursor at source
 	start   uint    // start point of each scan iteration for source
 	line    uint    // current line at source
@@ -14,6 +15,7 @@ func New(source string) Lexer {
 	return Lexer{
 		source:  source,
 		tokens:  make([]Token, 0),
+		errors:  make([]error, 0),
 		current: 0,
 		start:   0,
 		line:    1,
@@ -21,17 +23,19 @@ func New(source string) Lexer {
 }
 
 // Transforms lexer's source into a slice of Tokens.
-func (l *Lexer) Tokenize() []Token {
+func (l *Lexer) Tokenize() ([]Token, []error) {
 	for !l.isEnd() {
 		l.start = l.current
-		l.scan()
+		if err := l.scan(); err != nil {
+			l.registerError(err)
+		}
 	}
 
 	l.addToken(MustCreateTokenFromKind(Eof, l.line))
-	return l.tokens
+	return l.tokens, l.errors
 }
 
-func (l *Lexer) scan() {
+func (l *Lexer) scan() error {
 	ch := l.advance()
 
 	switch ch {
@@ -57,7 +61,15 @@ func (l *Lexer) scan() {
 		l.addToken(MustCreateTokenFromKind(Slash, l.line))
 	case '*':
 		l.addToken(MustCreateTokenFromKind(Star, l.line))
+	default:
+		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
+
+	return nil
+}
+
+func (l *Lexer) registerError(err error) {
+	l.errors = append(l.errors, err)
 }
 
 // Pushes a new token to the tokens slice.

@@ -24,7 +24,19 @@ func TestLexer(t *testing.T) {
 			MustCreateTokenFromKind(Star, 1),
 			MustCreateTokenFromKind(Eof, 1),
 		}
-		got := lexer.Tokenize()
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
+	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
+		source := "()$.#," // "$" is an invalid character
+		lexer := New(source)
+		expected := []error{
+			newUnexpectedCharacterError('$', 1, 2),
+			newUnexpectedCharacterError('#', 1, 4),
+		}
+		_, got := lexer.Tokenize()
 
 		assert.Equal(t, expected, got)
 	})
