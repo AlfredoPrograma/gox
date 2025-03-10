@@ -88,6 +88,21 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("should tokenize identifiers", func(t *testing.T) {
+		source := "myVar MyVar my_var my_var1"
+		lexer := New(source)
+		expected := []Token{
+			CreateToken(Identifier, "myVar", 1),
+			CreateToken(Identifier, "MyVar", 1),
+			CreateToken(Identifier, "my_var", 1),
+			CreateToken(Identifier, "my_var1", 1),
+			MustCreateTokenFromKind(Eof, 1),
+		}
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
 	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
 		source := "()$.#," // "$" and "#" are invalid characters
 		lexer := New(source)

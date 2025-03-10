@@ -93,6 +93,8 @@ func (l *Lexer) scan() error {
 		}
 	case unicode.IsDigit(ch):
 		l.number()
+	case unicode.IsLetter(ch):
+		l.identifier()
 	default:
 		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
@@ -103,6 +105,22 @@ func (l *Lexer) scan() error {
 // Pushes a new token to the tokens slice.
 func (l *Lexer) addToken(token Token) {
 	l.tokens = append(l.tokens, token)
+}
+
+// Builds identifier token.
+//
+// Valid identifiers start with alphabetic character and then contain a combination of alphanumeric and underscore characters.
+//
+// myVar, my_var, my_1_var -> Are valid identifiers.
+//
+// _myVar, _my_var, 1_my_var -> Aren't valid identifiers.
+func (l *Lexer) identifier() {
+	for !l.isEnd() && l.isValidCharForIdentifier(l.peek()) {
+		l.advance()
+	}
+
+	lexeme := l.source[l.start:l.current]
+	l.addToken(CreateToken(Identifier, lexeme, l.line))
 }
 
 // Builds number token.
@@ -205,6 +223,11 @@ func (l *Lexer) match(target rune) bool {
 
 	l.current++
 	return true
+}
+
+// Checks if given character is valid to be part of an identifier lexeme.
+func (l *Lexer) isValidCharForIdentifier(ch rune) bool {
+	return unicode.IsDigit(ch) || unicode.IsLetter(ch) || ch == '_'
 }
 
 // Checks if current source cursor has reached end.
