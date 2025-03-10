@@ -48,7 +48,7 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
-	t.Run("should skip comments from source", func(t *testing.T) {
+	t.Run("should skip comment", func(t *testing.T) {
 		source := "()// This is a comment"
 		lexer := New(source)
 		expected := []Token{
@@ -61,12 +61,35 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("should tokenize strings", func(t *testing.T) {
+		source := "\"Hello world\nMy name is Gox\""
+		lexer := New(source)
+		expected := []Token{
+			CreateToken(String, "Hello world\nMy name is Gox", 2),
+			MustCreateTokenFromKind(Eof, 2),
+		}
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
 	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
 		source := "()$.#," // "$" and "#" are invalid characters
 		lexer := New(source)
 		expected := []error{
 			newUnexpectedCharacterError('$', 1, 2),
 			newUnexpectedCharacterError('#', 1, 4),
+		}
+		_, got := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
+	t.Run("should throw unterminated string error", func(t *testing.T) {
+		source := "\"Unterminated string"
+		lexer := New(source)
+		expected := []error{
+			newUnterminatedStringError("Unterminated string", 1, 0),
 		}
 		_, got := lexer.Tokenize()
 

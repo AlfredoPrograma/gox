@@ -1,6 +1,9 @@
 package lexer
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+)
 
 // Lexer reads from source and transform them into
 // an intermediate meaningful representation for Gox.
@@ -83,6 +86,10 @@ func (l *Lexer) scan() error {
 		l.addToken(MustCreateTokenFromKind(Less, l.line))
 	case ch == '/' && l.match('/'):
 		l.skipComment()
+	case ch == '"':
+		if err := l.string(); err != nil {
+			return err
+		}
 	case ch == '/':
 		l.addToken(MustCreateTokenFromKind(Slash, l.line))
 	default:
@@ -99,6 +106,30 @@ func (l *Lexer) registerError(err error) {
 // Pushes a new token to the tokens slice.
 func (l *Lexer) addToken(token Token) {
 	l.tokens = append(l.tokens, token)
+}
+
+// Builds string token.
+func (l *Lexer) string() error {
+	var buf strings.Builder
+
+	for !l.isEnd() && l.peek() != '"' {
+		if l.peek() == '\n' {
+			l.line++
+		}
+
+		ch := l.advance()
+		buf.WriteRune(ch)
+	}
+
+	content := buf.String()
+
+	// Notice `l.line` points to the last line of the string.
+	if l.isEnd() {
+		return newUnterminatedStringError(content, l.line, l.start)
+	}
+
+	l.addToken(CreateToken(String, content, l.line))
+	return nil
 }
 
 // Consumes all next characters which are within a comment.
