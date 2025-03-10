@@ -94,7 +94,7 @@ func (l *Lexer) scan() error {
 	case unicode.IsDigit(ch):
 		l.number()
 	case unicode.IsLetter(ch):
-		l.identifier()
+		l.identifierOrKeyword()
 	default:
 		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
@@ -107,20 +107,26 @@ func (l *Lexer) addToken(token Token) {
 	l.tokens = append(l.tokens, token)
 }
 
-// Builds identifier token.
+// Builds an identifier or keyword token.
 //
-// Valid identifiers start with alphabetic character and then contain a combination of alphanumeric and underscore characters.
-//
-// myVar, my_var, my_1_var -> Are valid identifiers.
-//
-// _myVar, _my_var, 1_my_var -> Aren't valid identifiers.
-func (l *Lexer) identifier() {
+// During the tokenization process, lexer is not capable to determine if some stream
+// of characters which start with a letter is an identifier or a keyword. So lexer
+// needs to build the entire word and only then, verify if the built word is a keyword.
+// If it is a keyword; search the corresponding token kind for the lexeme and create the token.
+// Else, create an identifier token.
+func (l *Lexer) identifierOrKeyword() {
 	for !l.isEnd() && l.isValidCharForIdentifier(l.peek()) {
 		l.advance()
 	}
 
 	lexeme := l.source[l.start:l.current]
-	l.addToken(CreateToken(Identifier, lexeme, l.line))
+	keywordKind, ok := LexemeToTokenKindMap[lexeme]
+
+	if ok {
+		l.addToken(MustCreateTokenFromKind(keywordKind, l.line))
+	} else {
+		l.addToken(CreateToken(Identifier, lexeme, l.line))
+	}
 }
 
 // Builds number token.
@@ -225,7 +231,12 @@ func (l *Lexer) match(target rune) bool {
 	return true
 }
 
-// Checks if given character is valid to be part of an identifier lexeme.
+// Valid identifiers contain a combination of alphanumeric and underscore characters.
+// Also, identifiers should start with a letter character.
+//
+// myVar, my_var, my_1_var -> Are valid identifiers.
+//
+// _myVar, _my_var, 1_my_var -> Aren't valid identifiers.
 func (l *Lexer) isValidCharForIdentifier(ch rune) bool {
 	return unicode.IsDigit(ch) || unicode.IsLetter(ch) || ch == '_'
 }

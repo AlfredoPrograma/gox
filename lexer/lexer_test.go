@@ -103,6 +103,34 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("should tokenize keywords", func(t *testing.T) {
+		source := "and class else false function for if null or print return super this true var while"
+		lexer := New(source)
+		expected := []Token{
+			MustCreateTokenFromKind(And, 1),
+			MustCreateTokenFromKind(Class, 1),
+			MustCreateTokenFromKind(Else, 1),
+			MustCreateTokenFromKind(False, 1),
+			MustCreateTokenFromKind(Function, 1),
+			MustCreateTokenFromKind(For, 1),
+			MustCreateTokenFromKind(If, 1),
+			MustCreateTokenFromKind(Null, 1),
+			MustCreateTokenFromKind(Or, 1),
+			MustCreateTokenFromKind(Print, 1),
+			MustCreateTokenFromKind(Return, 1),
+			MustCreateTokenFromKind(Super, 1),
+			MustCreateTokenFromKind(This, 1),
+			MustCreateTokenFromKind(True, 1),
+			MustCreateTokenFromKind(Var, 1),
+			MustCreateTokenFromKind(While, 1),
+			MustCreateTokenFromKind(Eof, 1),
+		}
+
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
 	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
 		source := "()$.#," // "$" and "#" are invalid characters
 		lexer := New(source)

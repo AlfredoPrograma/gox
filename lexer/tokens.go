@@ -74,8 +74,34 @@ var TokenKindToLexemeMap = map[TokenKind]string{
 	GreaterEqual: ">=",
 	Less:         "<",
 	LessEqual:    "<=",
+	And:          "and",
+	Class:        "class",
+	Else:         "else",
+	False:        "false",
+	Function:     "function",
+	For:          "for",
+	If:           "if",
+	Null:         "null",
+	Or:           "or",
+	Print:        "print",
+	Return:       "return",
+	Super:        "super",
+	This:         "this",
+	True:         "true",
+	Var:          "var",
+	While:        "while",
 	Eof:          "",
 }
+
+var LexemeToTokenKindMap = func() map[string]TokenKind {
+	transformer := make(map[string]TokenKind, len(TokenKindToLexemeMap))
+
+	for kind, lexeme := range TokenKindToLexemeMap {
+		transformer[lexeme] = kind
+	}
+
+	return transformer
+}()
 
 type Token struct {
 	kind   TokenKind
