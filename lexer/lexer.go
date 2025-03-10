@@ -85,12 +85,14 @@ func (l *Lexer) scan() error {
 		l.addToken(MustCreateTokenFromKind(Less, l.line))
 	case ch == '/' && l.match('/'):
 		l.skipComment()
+	case ch == '/':
+		l.addToken(MustCreateTokenFromKind(Slash, l.line))
 	case ch == '"':
 		if err := l.string(); err != nil {
 			return err
 		}
-	case ch == '/':
-		l.addToken(MustCreateTokenFromKind(Slash, l.line))
+	case unicode.IsDigit(ch):
+		l.number()
 	default:
 		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
@@ -98,16 +100,38 @@ func (l *Lexer) scan() error {
 	return nil
 }
 
-func (l *Lexer) registerError(err error) {
-	l.errors = append(l.errors, err)
-}
-
 // Pushes a new token to the tokens slice.
 func (l *Lexer) addToken(token Token) {
 	l.tokens = append(l.tokens, token)
 }
 
+// Builds number token.
+//
+// Numbers don't allow leading or trailing decimal point.
+func (l *Lexer) number() {
+	// Consumes int part of the number
+	for unicode.IsDigit(l.peek()) {
+		l.advance()
+	}
+
+	if l.peek() == '.' && unicode.IsDigit(l.peekNext()) {
+		l.advance() // Consumes decimal point
+
+		// Consumes decimal part of the number
+		for unicode.IsDigit(l.peek()) {
+			l.advance()
+		}
+	}
+
+	lexeme := l.source[l.start:l.current]
+
+	l.addToken(CreateToken(Number, lexeme, l.line))
+}
+
 // Builds string token.
+//
+// Strings should start with double quote character and be close with it too.
+// Also, strings allow multiline by default.
 func (l *Lexer) string() error {
 	for !l.isEnd() && l.peek() != '"' {
 		if l.peek() == '\n' {
@@ -117,17 +141,17 @@ func (l *Lexer) string() error {
 		l.advance()
 	}
 
-	content := l.source[l.start+1 : l.current]
+	lexeme := l.source[l.start+1 : l.current]
 
-	// Notice `l.line` points to the last line of the string.
+	// Notice l.line points to the last line of the string.
 	if l.isEnd() {
-		return newUnterminatedStringError(content, l.line, l.start)
+		return newUnterminatedStringError(lexeme, l.line, l.start)
 	}
 
 	// Consume closing quote
 	l.advance()
 
-	l.addToken(CreateToken(String, content, l.line))
+	l.addToken(CreateToken(String, lexeme, l.line))
 	return nil
 }
 
@@ -154,6 +178,17 @@ func (l *Lexer) peek() rune {
 	return rune(l.source[l.current])
 }
 
+// Takes the character at next of the current source cursor and NOT updates its index.
+func (l *Lexer) peekNext() rune {
+	nextIdx := l.current + 1
+
+	if l.isEnd() || int(nextIdx) >= len(l.source) {
+		return 0
+	}
+
+	return rune(l.source[nextIdx])
+}
+
 // Tries to match the current source cursor character with an arbitrary character.
 //
 // If matches, advance it and return true; otherwise just return false.
@@ -175,4 +210,9 @@ func (l *Lexer) match(target rune) bool {
 // Checks if current source cursor has reached end.
 func (l *Lexer) isEnd() bool {
 	return int(l.current) >= len(l.source)
+}
+
+// Pushes error into lexer's errors slice.
+func (l *Lexer) registerError(err error) {
+	l.errors = append(l.errors, err)
 }
