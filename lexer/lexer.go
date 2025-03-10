@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"strings"
 	"unicode"
 )
 
@@ -110,23 +109,23 @@ func (l *Lexer) addToken(token Token) {
 
 // Builds string token.
 func (l *Lexer) string() error {
-	var buf strings.Builder
-
 	for !l.isEnd() && l.peek() != '"' {
 		if l.peek() == '\n' {
 			l.line++
 		}
 
-		ch := l.advance()
-		buf.WriteRune(ch)
+		l.advance()
 	}
 
-	content := buf.String()
+	content := l.source[l.start+1 : l.current]
 
 	// Notice `l.line` points to the last line of the string.
 	if l.isEnd() {
 		return newUnterminatedStringError(content, l.line, l.start)
 	}
+
+	// Consume closing quote
+	l.advance()
 
 	l.addToken(CreateToken(String, content, l.line))
 	return nil
