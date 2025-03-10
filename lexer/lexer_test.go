@@ -48,8 +48,21 @@ func TestLexer(t *testing.T) {
 		assert.Equal(t, expected, got)
 	})
 
+	t.Run("should skip comments from source", func(t *testing.T) {
+		source := "()// This is a comment"
+		lexer := New(source)
+		expected := []Token{
+			MustCreateTokenFromKind(LeftParen, 1),
+			MustCreateTokenFromKind(RightParen, 1),
+			MustCreateTokenFromKind(Eof, 1),
+		}
+		got, _ := lexer.Tokenize()
+
+		assert.Equal(t, expected, got)
+	})
+
 	t.Run("should throw unexpected character error when there invalid characters at source", func(t *testing.T) {
-		source := "()$.#," // "$" is an invalid character
+		source := "()$.#," // "$" and "#" are invalid characters
 		lexer := New(source)
 		expected := []error{
 			newUnexpectedCharacterError('$', 1, 2),

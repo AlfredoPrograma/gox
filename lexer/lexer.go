@@ -1,5 +1,7 @@
 package lexer
 
+import "unicode"
+
 // Lexer reads from source and transform them into
 // an intermediate meaningful representation for Gox.
 type Lexer struct {
@@ -38,53 +40,51 @@ func (l *Lexer) Tokenize() ([]Token, []error) {
 func (l *Lexer) scan() error {
 	ch := l.advance()
 
-	switch ch {
-	case '(':
+	switch {
+	case ch == '\n':
+		l.line++
+	case unicode.IsSpace(ch):
+		break
+	case ch == '(':
 		l.addToken(MustCreateTokenFromKind(LeftParen, l.line))
-	case ')':
+	case ch == ')':
 		l.addToken(MustCreateTokenFromKind(RightParen, l.line))
-	case '{':
+	case ch == '{':
 		l.addToken(MustCreateTokenFromKind(LeftBrace, l.line))
-	case '}':
+	case ch == '}':
 		l.addToken(MustCreateTokenFromKind(RightBrace, l.line))
-	case ',':
+	case ch == ',':
 		l.addToken(MustCreateTokenFromKind(Comma, l.line))
-	case '.':
+	case ch == '.':
 		l.addToken(MustCreateTokenFromKind(Dot, l.line))
-	case '-':
+	case ch == '-':
 		l.addToken(MustCreateTokenFromKind(Minus, l.line))
-	case '+':
+	case ch == '+':
 		l.addToken(MustCreateTokenFromKind(Plus, l.line))
-	case ';':
+	case ch == ';':
 		l.addToken(MustCreateTokenFromKind(Semicolon, l.line))
-	case '/':
-		l.addToken(MustCreateTokenFromKind(Slash, l.line))
-	case '*':
+	case ch == '*':
 		l.addToken(MustCreateTokenFromKind(Star, l.line))
-	case '!':
-		if l.match('=') {
-			l.addToken(MustCreateTokenFromKind(BangEqual, l.line))
-		} else {
-			l.addToken(MustCreateTokenFromKind(Bang, l.line))
-		}
-	case '=':
-		if l.match('=') {
-			l.addToken(MustCreateTokenFromKind(DoubleEqual, l.line))
-		} else {
-			l.addToken(MustCreateTokenFromKind(Equal, l.line))
-		}
-	case '>':
-		if l.match('=') {
-			l.addToken(MustCreateTokenFromKind(GreaterEqual, l.line))
-		} else {
-			l.addToken(MustCreateTokenFromKind(Greater, l.line))
-		}
-	case '<':
-		if l.match('=') {
-			l.addToken(MustCreateTokenFromKind(LessEqual, l.line))
-		} else {
-			l.addToken(MustCreateTokenFromKind(Less, l.line))
-		}
+	case ch == '!' && l.match('='):
+		l.addToken(MustCreateTokenFromKind(BangEqual, l.line))
+	case ch == '!':
+		l.addToken(MustCreateTokenFromKind(Bang, l.line))
+	case ch == '=' && l.match('='):
+		l.addToken(MustCreateTokenFromKind(DoubleEqual, l.line))
+	case ch == '=':
+		l.addToken(MustCreateTokenFromKind(Equal, l.line))
+	case ch == '>' && l.match('='):
+		l.addToken(MustCreateTokenFromKind(GreaterEqual, l.line))
+	case ch == '>':
+		l.addToken(MustCreateTokenFromKind(Greater, l.line))
+	case ch == '<' && l.match('='):
+		l.addToken(MustCreateTokenFromKind(LessEqual, l.line))
+	case ch == '<':
+		l.addToken(MustCreateTokenFromKind(Less, l.line))
+	case ch == '/' && l.match('/'):
+		l.skipComment()
+	case ch == '/':
+		l.addToken(MustCreateTokenFromKind(Slash, l.line))
 	default:
 		return newUnexpectedCharacterError(ch, l.line, l.start)
 	}
@@ -101,11 +101,27 @@ func (l *Lexer) addToken(token Token) {
 	l.tokens = append(l.tokens, token)
 }
 
-// Takes the character at current source cursor, updates to next index and returns the character.
+// Consumes all next characters which are within a comment.
+func (l *Lexer) skipComment() {
+	for !l.isEnd() && l.peek() != '\n' {
+		l.advance()
+	}
+}
+
+// Takes the character at current source cursor and updates to next index.
 func (l *Lexer) advance() rune {
-	ch := l.source[l.current]
+	ch := rune(l.source[l.current])
 	l.current++
-	return rune(ch)
+	return ch
+}
+
+// Takes the character at current source cursor, but NOT updates to next index.
+func (l *Lexer) peek() rune {
+	if l.isEnd() {
+		return 0
+	}
+
+	return rune(l.source[l.current])
 }
 
 // Tries to match the current source cursor character with an arbitrary character.
