@@ -14,11 +14,11 @@ func TestExpressionsStrings(t *testing.T) {
 
 	tcs := []testCase{
 		{
-			expr:     NewBinary(NewLiteral(10), lexer.MustCreateTokenFromKind(lexer.Plus, 1), NewLiteral(12)),
+			expr:     NewBinary(NewLiteral(10), lexer.Plus, NewLiteral(12)),
 			expected: "(10 + 12)",
 		},
 		{
-			expr:     NewUnary(lexer.MustCreateTokenFromKind(lexer.Minus, 1), NewLiteral(5)),
+			expr:     NewUnary(lexer.Minus, NewLiteral(5)),
 			expected: "(-5)",
 		},
 		{
@@ -33,13 +33,13 @@ func TestExpressionsStrings(t *testing.T) {
 			expr: NewGroup(
 				NewBinary(
 					NewLiteral(10),
-					lexer.MustCreateTokenFromKind(lexer.Star, 1),
+					lexer.Star,
 					NewBinary(
 						NewUnary(
-							lexer.MustCreateTokenFromKind(lexer.Minus, 1),
+							lexer.Minus,
 							NewLiteral(20),
 						),
-						lexer.MustCreateTokenFromKind(lexer.Slash, 1),
+						lexer.Slash,
 						NewLiteral(8),
 					),
 				),
@@ -50,6 +50,40 @@ func TestExpressionsStrings(t *testing.T) {
 
 	for _, tc := range tcs {
 		got := tc.expr.String()
+
+		if tc.expected != got {
+			t.Errorf("expected %s, but got %s", tc.expected, got)
+		}
+	}
+}
+
+func TestExpressionsComputing(t *testing.T) {
+	type testCase struct {
+		expr     Expr
+		expected any
+	}
+
+	testCases := []testCase{
+		{
+			expr:     NewBinary(NewLiteral(10.0), lexer.Slash, NewLiteral(5.0)),
+			expected: 2.0,
+		},
+		{
+			expr:     NewUnary(lexer.Minus, NewLiteral(10.0)),
+			expected: -10.0,
+		},
+		{
+			expr:     NewGroup(NewLiteral(20.0)),
+			expected: 20.0,
+		},
+		{
+			expr:     NewLiteral(1.0),
+			expected: 1.0,
+		},
+	}
+
+	for _, tc := range testCases {
+		got, _ := tc.expr.Compute()
 
 		if tc.expected != got {
 			t.Errorf("expected %s, but got %s", tc.expected, got)
