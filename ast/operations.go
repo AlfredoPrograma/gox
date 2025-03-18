@@ -17,8 +17,16 @@ func computeNumberUnaryOperation(operator lexer.TokenKind, value float64) (float
 }
 
 // Computes the result of the binary operation corresponding to given operator and numbers
-func computeNumberBinaryOperation(left float64, operator lexer.TokenKind, right float64) (float64, error) {
+func computeNumberBinaryOperation(left float64, operator lexer.TokenKind, right float64) (any, error) {
 	switch operator {
+	case lexer.Greater:
+		return left > right, nil
+	case lexer.GreaterEqual:
+		return left >= right, nil
+	case lexer.Less:
+		return left < right, nil
+	case lexer.LessEqual:
+		return left <= right, nil
 	case lexer.Plus:
 		return left + right, nil
 	case lexer.Minus:
@@ -28,6 +36,6 @@ func computeNumberBinaryOperation(left float64, operator lexer.TokenKind, right 
 	case lexer.Slash:
 		return left / right, nil
 	default:
-		return 0, createASTError(fmt.Sprintf("invalid operator %s for integers binary operation", lexer.TokenKindToLexemeMap[operator]))
+		return 0, createASTError(fmt.Sprintf("invalid operator %s for numeric binary operation", lexer.TokenKindToLexemeMap[operator]))
 	}
 }
