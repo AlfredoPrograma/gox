@@ -104,8 +104,8 @@ var LexemeToTokenKindMap = func() map[string]TokenKind {
 }()
 
 type Token struct {
-	kind   TokenKind
-	lexeme string
+	Kind   TokenKind
+	Lexeme string
 	line   uint
 }
 
@@ -127,10 +127,6 @@ func MustCreateTokenFromKind(kind TokenKind, line uint) Token {
 	return Token{kind, lexeme, line}
 }
 
-func (t Token) Lexeme() string {
-	return t.lexeme
-}
-
 func (t Token) String() string {
-	return fmt.Sprintf("Token <%v> (%v) at line %d", t.kind, t.lexeme, t.line)
+	return fmt.Sprintf("Token <%v> (%v) at line %d", t.Kind, t.Lexeme, t.line)
 }
